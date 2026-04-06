@@ -1,0 +1,40 @@
+syntax = "proto3";
+package scoring.v1;
+option go_package = "github.com/quizbattle/server/gen/scoring/v1;scoringv1";
+
+service ScoringService {
+  rpc CalculateScore(ScoreRequest) returns (ScoreResponse);
+  rpc GetLeaderboard(LeaderboardRequest) returns (LeaderboardResponse);
+}
+
+message ScoreRequest {
+  string room_id = 1;
+  string user_id = 2;
+  string question_id = 3;
+  int32 round = 4;
+  bool correct = 5;
+  int64 response_time_ms = 6;
+  string difficulty = 7;
+  int32 time_limit_ms = 8;
+}
+
+message ScoreResponse {
+  int32 points_awarded = 1;
+  int32 total_score = 2;
+  int32 new_rank = 3;
+}
+
+message LeaderboardRequest {
+  string room_id = 1;
+}
+
+message LeaderboardResponse {
+  repeated LeaderboardEntry entries = 1;
+}
+
+message LeaderboardEntry {
+  string user_id = 1;
+  string username = 2;
+  int32 score = 3;
+  int32 rank = 4;
+}

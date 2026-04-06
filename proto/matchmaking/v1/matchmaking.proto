@@ -1,0 +1,64 @@
+syntax = "proto3";
+package matchmaking.v1;
+option go_package = "github.com/quizbattle/server/gen/matchmaking/v1;matchmakingv1";
+
+service MatchmakingService {
+  rpc JoinMatchmaking(JoinRequest) returns (JoinResponse);
+  rpc LeaveMatchmaking(LeaveRequest) returns (LeaveResponse);
+  rpc SubscribeToMatch(SubscribeRequest) returns (stream MatchEvent);
+}
+
+message JoinRequest {
+  string user_id = 1;
+  string username = 2;
+  int32 rating = 3;
+}
+
+message JoinResponse {
+  string ticket_id = 1;
+  int32 estimated_wait_secs = 2;
+  int32 pool_size = 3;
+}
+
+message LeaveRequest {
+  string user_id = 1;
+  string ticket_id = 2;
+}
+
+message LeaveResponse {
+  bool success = 1;
+}
+
+message SubscribeRequest {
+  string user_id = 1;
+  string ticket_id = 2;
+}
+
+message MatchEvent {
+  oneof event {
+    MatchFound match_found = 1;
+    WaitUpdate wait_update = 2;
+    MatchCancelled match_cancelled = 3;
+  }
+}
+
+message MatchFound {
+  string room_id = 1;
+  repeated PlayerInfo players = 2;
+  int32 total_rounds = 3;
+}
+
+message WaitUpdate {
+  int32 pool_size = 1;
+  int32 estimated_wait_secs = 2;
+}
+
+message MatchCancelled {
+  string reason = 1;
+}
+
+message PlayerInfo {
+  string user_id = 1;
+  string username = 2;
+  int32 rating = 3;
+}

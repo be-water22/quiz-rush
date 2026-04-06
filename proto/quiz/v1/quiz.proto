@@ -1,0 +1,123 @@
+syntax = "proto3";
+package quiz.v1;
+option go_package = "github.com/quizbattle/server/gen/quiz/v1;quizv1";
+
+import "google/protobuf/timestamp.proto";
+
+service QuizService {
+  rpc GetRoomQuestions(RoomRequest) returns (QuestionsResponse);
+  rpc SubmitAnswer(AnswerRequest) returns (AnswerAck);
+  rpc StreamGameEvents(StreamRequest) returns (stream GameEvent);
+}
+
+message RoomRequest {
+  string room_id = 1;
+}
+
+message QuestionsResponse {
+  repeated Question questions = 1;
+}
+
+message Question {
+  string question_id = 1;
+  string text = 2;
+  repeated string options = 3;
+  string difficulty = 4;
+  string topic = 5;
+  int32 time_limit_secs = 6;
+}
+
+message AnswerRequest {
+  string room_id = 1;
+  string user_id = 2;
+  string question_id = 3;
+  int32 selected_index = 4;
+  int64 response_time_ms = 5;
+  int32 round = 6;
+}
+
+message AnswerAck {
+  bool accepted = 1;
+  string reason = 2;
+}
+
+message StreamRequest {
+  string room_id = 1;
+  string user_id = 2;
+  int32 last_seen_round = 3;
+}
+
+message GameEvent {
+  oneof event {
+    QuestionBroadcast question = 1;
+    LeaderboardUpdate leaderboard = 2;
+    RoundResult round_result = 3;
+    MatchEnd match_end = 4;
+    PlayerJoined player_joined = 5;
+    TimerSync timer_sync = 6;
+  }
+}
+
+message QuestionBroadcast {
+  int32 round = 1;
+  string question_id = 2;
+  string text = 3;
+  repeated string options = 4;
+  string difficulty = 5;
+  int32 time_limit_secs = 6;
+  google.protobuf.Timestamp deadline = 7;
+}
+
+message LeaderboardUpdate {
+  repeated LeaderboardEntry entries = 1;
+  int32 after_round = 2;
+}
+
+message LeaderboardEntry {
+  string user_id = 1;
+  string username = 2;
+  int32 score = 3;
+  int32 rank = 4;
+  int32 rank_change = 5;
+}
+
+message RoundResult {
+  int32 round = 1;
+  int32 correct_option_index = 2;
+  repeated PlayerRoundResult player_results = 3;
+}
+
+message PlayerRoundResult {
+  string user_id = 1;
+  bool correct = 2;
+  int32 points_earned = 3;
+  int64 response_time_ms = 4;
+}
+
+message MatchEnd {
+  string room_id = 1;
+  string winner_user_id = 2;
+  string winner_username = 3;
+  repeated FinalStanding standings = 4;
+}
+
+message FinalStanding {
+  string user_id = 1;
+  string username = 2;
+  int32 final_score = 3;
+  int32 rank = 4;
+  int32 correct_answers = 5;
+  int64 avg_response_time_ms = 6;
+}
+
+message PlayerJoined {
+  string user_id = 1;
+  string username = 2;
+  int32 current_player_count = 3;
+}
+
+message TimerSync {
+  int32 round = 1;
+  int32 remaining_secs = 2;
+  google.protobuf.Timestamp server_time = 3;
+}

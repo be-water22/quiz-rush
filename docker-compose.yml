@@ -1,0 +1,126 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: mongosh --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: redis-cli ping
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: quiz
+      RABBITMQ_DEFAULT_PASS: quiz
+    healthcheck:
+      test: rabbitmq-diagnostics -q check_running
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: seed
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: quizbattle
+
+  matchmaking:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: matchmaking
+    ports:
+      - "50051:50051"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    environment:
+      GRPC_PORT: "50051"
+      REDIS_ADDR: redis:6379
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: quizbattle
+      RABBITMQ_URL: amqp://quiz:quiz@rabbitmq:5672/
+
+  quizengine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: quizengine
+    ports:
+      - "50052:50052"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    environment:
+      GRPC_PORT: "50052"
+      REDIS_ADDR: redis:6379
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: quizbattle
+      RABBITMQ_URL: amqp://quiz:quiz@rabbitmq:5672/
+
+  scoring:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: scoring
+    ports:
+      - "50053:50053"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    environment:
+      GRPC_PORT: "50053"
+      REDIS_ADDR: redis:6379
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: quizbattle
+      RABBITMQ_URL: amqp://quiz:quiz@rabbitmq:5672/
+
+volumes:
+  mongo_data:
+  redis_data:
