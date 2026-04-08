@@ -2,14 +2,17 @@ package scoring
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
 
-//go:embed ../../internal/lua/leaderboard_update.lua
-var leaderboardUpdateScript string
+var leaderboardUpdateScript = `
+redis.call('ZINCRBY', KEYS[1], ARGV[2], ARGV[1])
+local score = redis.call('ZSCORE', KEYS[1], ARGV[1])
+local rank = redis.call('ZREVRANK', KEYS[1], ARGV[1])
+return {tonumber(score), rank}
+`
 
 type Leaderboard struct {
 	rdb *redis.Client

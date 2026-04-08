@@ -2,15 +2,22 @@ package matchmaking
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-//go:embed ../../internal/lua/matchmaking_pop.lua
-var matchmakingPopScript string
+var matchmakingPopScript = `
+local removed = {}
+for i, uid in ipairs(ARGV) do
+  local result = redis.call('ZREM', KEYS[1], uid)
+  if result == 1 then
+    table.insert(removed, uid)
+  end
+end
+return removed
+`
 
 const poolKey = "matchmaking:pool"
 
