@@ -108,7 +108,7 @@ class GameplayScreen extends ConsumerWidget {
 
             // Question & Options
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [

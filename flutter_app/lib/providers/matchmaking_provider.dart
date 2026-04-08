@@ -6,7 +6,7 @@ import '../services/grpc/matchmaking_client.dart';
 import 'grpc_providers.dart';
 
 final currentUserProvider = StateProvider<Player>((ref) {
-  return const Player(userId: 'current-user', username: 'You', rating: 1480);
+  return const Player(userId: 'current-user', username: 'You');
 });
 
 final matchmakingProvider = StateNotifierProvider<MatchmakingNotifier, MatchmakingState>((ref) {

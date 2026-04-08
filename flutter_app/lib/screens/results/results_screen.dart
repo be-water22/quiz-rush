@@ -4,18 +4,54 @@ import 'package:go_router/go_router.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/matchmaking_provider.dart';
+import '../../providers/user_stats_provider.dart';
 import '../../models/game_state.dart';
 import '../../widgets/player_avatar.dart';
 
-class ResultsScreen extends ConsumerWidget {
+class ResultsScreen extends ConsumerStatefulWidget {
   final String matchId;
 
   const ResultsScreen({super.key, required this.matchId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends ConsumerState<ResultsScreen> {
+  bool _statsRecorded = false;
+
+  void _recordStats() {
+    if (_statsRecorded) return;
+    _statsRecorded = true;
+
+    final game = ref.read(gameProvider);
+    final currentUser = ref.read(currentUserProvider);
+    if (game == null || game.matchResult == null) return;
+
+    final userStanding = game.matchResult!.standings.firstWhere(
+      (s) => s.userId == currentUser.userId,
+      orElse: () => const FinalStanding(
+          userId: '', username: '', finalScore: 0, rank: 0),
+    );
+
+    ref.read(userStatsProvider.notifier).recordMatch(
+          rank: userStanding.rank,
+          correctAnswers: userStanding.correctAnswers,
+          totalQuestions: game.totalRounds,
+          score: userStanding.finalScore,
+          avgResponseTimeSecs: userStanding.avgResponseTimeMs / 1000.0,
+          streak: userStanding.correctAnswers,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final game = ref.watch(gameProvider);
     final currentUser = ref.watch(currentUserProvider);
+
+    if (game != null && game.matchResult != null && !_statsRecorded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _recordStats());
+    }
 
     if (game == null || game.matchResult == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

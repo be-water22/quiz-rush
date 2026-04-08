@@ -1,23 +1,15 @@
 import 'package:grpc/grpc.dart';
 import '../../models/player.dart';
+import '../lobby.dart';
 
-// Simplified client that wraps gRPC generated code
-// In production, this would use the generated MatchmakingServiceClient
 class MatchmakingGrpcClient {
   final ClientChannel channel;
+  Player? _currentPlayer;
 
   MatchmakingGrpcClient(this.channel);
 
-  // Simulated for now - would use generated client
   Future<String> joinMatchmaking(Player player) async {
-    // In production:
-    // final client = MatchmakingServiceClient(channel);
-    // final response = await client.joinMatchmaking(JoinRequest(
-    //   userId: player.userId,
-    //   username: player.username,
-    //   rating: player.rating,
-    // ));
-    // return response.ticketId;
+    _currentPlayer = player;
     await Future.delayed(const Duration(milliseconds: 500));
     return 'ticket-${DateTime.now().millisecondsSinceEpoch}';
   }
@@ -26,25 +18,27 @@ class MatchmakingGrpcClient {
     await Future.delayed(const Duration(milliseconds: 200));
   }
 
-  // Returns a stream of match events
   Stream<MatchEventData> subscribeToMatch(String userId, String ticketId) async* {
+    // Pick 4-9 random opponents (total players = 5-10 including user)
+    final opponents = Lobby.pickRandomOpponents(min: 4, max: 9);
+
     // Simulate finding opponents over time
     await Future.delayed(const Duration(seconds: 2));
-    yield MatchEventData.waitUpdate(poolSize: 3, eta: 10);
+    yield MatchEventData.waitUpdate(poolSize: opponents.length ~/ 2, eta: 10);
 
     await Future.delayed(const Duration(seconds: 2));
-    yield MatchEventData.waitUpdate(poolSize: 4, eta: 5);
+    yield MatchEventData.waitUpdate(poolSize: opponents.length, eta: 5);
 
     await Future.delayed(const Duration(seconds: 2));
+
+    final allPlayers = [
+      Player(userId: userId, username: _currentPlayer?.username ?? 'You'),
+      ...opponents,
+    ];
+
     yield MatchEventData.matchFound(
       roomId: 'room-${DateTime.now().millisecondsSinceEpoch}',
-      players: [
-        const Player(userId: 'user-1', username: 'Aman', rating: 1500),
-        const Player(userId: 'user-2', username: 'Priya', rating: 1450),
-        const Player(userId: 'user-3', username: 'Rahul', rating: 1550),
-        Player(userId: userId, username: 'You', rating: 1480),
-        const Player(userId: 'user-5', username: 'Neha', rating: 1400),
-      ],
+      players: allPlayers,
       totalRounds: 5,
     );
   }

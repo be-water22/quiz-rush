@@ -20,8 +20,13 @@ class GameNotifier extends StateNotifier<GameState?> {
 
   GameNotifier(this._client, this._userId) : super(null);
 
-  void startGame(String roomId, int totalRounds) {
+  void startGame(String roomId, int totalRounds, {List<String> opponentIds = const [], List<String> opponentNames = const []}) {
     state = GameState(roomId: roomId, totalRounds: totalRounds);
+
+    // Set opponents for this match
+    if (opponentIds.isNotEmpty) {
+      _client.setOpponents(opponentIds, opponentNames);
+    }
 
     _subscription = _client.streamGameEvents(roomId, _userId).listen(
       (event) {

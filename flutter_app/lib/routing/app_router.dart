@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../screens/login/login_screen.dart';
 import '../screens/matchmaking/matchmaking_screen.dart';
 import '../screens/gameplay/gameplay_screen.dart';
 import '../screens/leaderboard/leaderboard_screen.dart';
 import '../screens/results/results_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/matchmaking',
+    initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          child: const LoginScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/profile',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          child: const ProfileScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
       GoRoute(
         path: '/matchmaking',
         pageBuilder: (context, state) => CustomTransitionPage(

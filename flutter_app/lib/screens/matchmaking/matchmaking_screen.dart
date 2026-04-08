@@ -33,8 +33,15 @@ class _MatchmakingScreenState extends ConsumerState<MatchmakingScreen> {
     // Navigate to game when match is found
     ref.listen<MatchmakingState>(matchmakingProvider, (previous, next) {
       if (next.status == MatchStatus.found && next.roomId != null) {
-        // Start the game
-        ref.read(gameProvider.notifier).startGame(next.roomId!, next.totalRounds);
+        // Start the game with opponent info
+        final currentUserId = ref.read(currentUserProvider).userId;
+        final opponents = next.foundPlayers.where((p) => p.userId != currentUserId).toList();
+        ref.read(gameProvider.notifier).startGame(
+          next.roomId!,
+          next.totalRounds,
+          opponentIds: opponents.map((p) => p.userId).toList(),
+          opponentNames: opponents.map((p) => p.username).toList(),
+        );
         // Navigate after a brief delay to show "found" state
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
@@ -61,21 +68,47 @@ class _MatchmakingScreenState extends ConsumerState<MatchmakingScreen> {
           child: Column(
             children: [
               // Top bar
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Quiz Battle',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 40),
+                    const Text(
+                      'Quiz Battle',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.go('/profile'),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.cardBackground,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.15),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               // Radar section
               Expanded(
+                child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -172,10 +205,11 @@ class _MatchmakingScreenState extends ConsumerState<MatchmakingScreen> {
                   ],
                 ),
               ),
+              ),
 
               // Cancel button
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
