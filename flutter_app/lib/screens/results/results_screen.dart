@@ -312,7 +312,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       onPressed: () {
                         ref.read(gameProvider.notifier).reset();
                         ref.read(matchmakingProvider.notifier).reset();
-                        context.go('/matchmaking');
+                        context.go('/profile');
                       },
                       child: const Text('Rematch'),
                     ),
@@ -323,7 +323,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       onPressed: () {
                         ref.read(gameProvider.notifier).reset();
                         ref.read(matchmakingProvider.notifier).reset();
-                        context.go('/matchmaking');
+                        context.go('/profile');
                       },
                       child: const Text('Home'),
                     ),

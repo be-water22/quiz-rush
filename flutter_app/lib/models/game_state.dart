@@ -50,11 +50,14 @@ class GameState {
   final Question? currentQuestion;
   final int? selectedAnswerIndex;
   final bool? answerCorrect;
+  final int? correctAnswerIndex; // revealed after round result
   final int score;
   final int position;
   final int remainingSeconds;
   final List<LeaderboardEntry> leaderboard;
   final MatchResult? matchResult;
+  // Track per-round correctness: round number -> true/false/null
+  final Map<int, bool> roundResults;
 
   const GameState({
     required this.roomId,
@@ -63,11 +66,13 @@ class GameState {
     this.currentQuestion,
     this.selectedAnswerIndex,
     this.answerCorrect,
+    this.correctAnswerIndex,
     this.score = 0,
     this.position = 0,
     this.remainingSeconds = 15,
     this.leaderboard = const [],
     this.matchResult,
+    this.roundResults = const {},
   });
 
   GameState copyWith({
@@ -77,11 +82,13 @@ class GameState {
     Question? currentQuestion,
     int? selectedAnswerIndex,
     bool? answerCorrect,
+    int? correctAnswerIndex,
     int? score,
     int? position,
     int? remainingSeconds,
     List<LeaderboardEntry>? leaderboard,
     MatchResult? matchResult,
+    Map<int, bool>? roundResults,
     bool clearAnswer = false,
   }) {
     return GameState(
@@ -91,11 +98,13 @@ class GameState {
       currentQuestion: currentQuestion ?? this.currentQuestion,
       selectedAnswerIndex: clearAnswer ? null : (selectedAnswerIndex ?? this.selectedAnswerIndex),
       answerCorrect: clearAnswer ? null : (answerCorrect ?? this.answerCorrect),
+      correctAnswerIndex: clearAnswer ? null : (correctAnswerIndex ?? this.correctAnswerIndex),
       score: score ?? this.score,
       position: position ?? this.position,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       leaderboard: leaderboard ?? this.leaderboard,
       matchResult: matchResult ?? this.matchResult,
+      roundResults: roundResults ?? this.roundResults,
     );
   }
 }

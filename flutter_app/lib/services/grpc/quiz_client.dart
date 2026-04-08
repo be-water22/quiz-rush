@@ -60,13 +60,21 @@ class QuizGrpcClient {
   // Total response times
   final Map<String, int> _totalResponseMs = {};
 
+  // Correct answer per round for instant feedback
+  final Map<int, int> _correctIndexPerRound = {};
+
   // Dynamically set opponents from matchmaking
   List<_OpponentProfile> _opponents = [];
+  String _userName = 'You';
 
   QuizGrpcClient(this.channel);
 
-  /// Call before streaming to set the opponents for this match.
-  void setOpponents(List<String> opponentIds, List<String> opponentNames) {
+  /// Get the correct answer index for a round (for instant feedback).
+  int? getCorrectIndex(int round) => _correctIndexPerRound[round];
+
+  /// Call before streaming to set the opponents and user name for this match.
+  void setOpponents(List<String> opponentIds, List<String> opponentNames, {String userName = 'You'}) {
+    _userName = userName;
     _opponents = List.generate(opponentIds.length, (i) {
       // Random accuracy 50-85%, random speed factor 0.3-0.7
       final accuracy = 0.50 + _random.nextDouble() * 0.35;
@@ -100,6 +108,7 @@ class QuizGrpcClient {
     _scores.clear();
     _correctCounts.clear();
     _totalResponseMs.clear();
+    _correctIndexPerRound.clear();
 
     // Initialize scores
     _scores[userId] = 0;
@@ -136,6 +145,7 @@ class QuizGrpcClient {
         round: round,
       );
 
+      _correctIndexPerRound[round] = q.correctIndex;
       yield GameEventData.questionBroadcast(question);
 
       // Timer countdown - wait for user answer
@@ -219,7 +229,7 @@ class QuizGrpcClient {
 
   List<LeaderboardEntry> _buildLeaderboard(String userId) {
     final allPlayers = <MapEntry<String, String>>[
-      MapEntry(userId, 'You'),
+      MapEntry(userId, '$_userName (You)'),
       ...(_opponents.map((o) => MapEntry(o.userId, o.username))),
     ];
 
@@ -239,7 +249,7 @@ class QuizGrpcClient {
 
   List<FinalStanding> _buildFinalStandings(String userId) {
     final allPlayers = <MapEntry<String, String>>[
-      MapEntry(userId, 'You'),
+      MapEntry(userId, '$_userName (You)'),
       ...(_opponents.map((o) => MapEntry(o.userId, o.username))),
     ];
 

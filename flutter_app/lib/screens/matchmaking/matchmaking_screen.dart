@@ -217,6 +217,7 @@ class _MatchmakingScreenState extends ConsumerState<MatchmakingScreen> {
                         ? null
                         : () {
                             ref.read(matchmakingProvider.notifier).leaveMatchmaking();
+                            context.go('/profile');
                           },
                     child: Text(
                       state.status == MatchStatus.found ? 'Starting...' : 'Cancel',

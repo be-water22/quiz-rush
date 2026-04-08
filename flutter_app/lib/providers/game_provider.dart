@@ -9,23 +9,24 @@ import 'matchmaking_provider.dart';
 final gameProvider = StateNotifierProvider<GameNotifier, GameState?>((ref) {
   final client = ref.watch(quizClientProvider);
   final user = ref.watch(currentUserProvider);
-  return GameNotifier(client, user.userId);
+  return GameNotifier(client, user.userId, user.username);
 });
 
 class GameNotifier extends StateNotifier<GameState?> {
   final QuizGrpcClient _client;
   final String _userId;
+  final String _userName;
   StreamSubscription? _subscription;
   Timer? _countdownTimer;
 
-  GameNotifier(this._client, this._userId) : super(null);
+  GameNotifier(this._client, this._userId, this._userName) : super(null);
 
   void startGame(String roomId, int totalRounds, {List<String> opponentIds = const [], List<String> opponentNames = const []}) {
     state = GameState(roomId: roomId, totalRounds: totalRounds);
 
     // Set opponents for this match
     if (opponentIds.isNotEmpty) {
-      _client.setOpponents(opponentIds, opponentNames);
+      _client.setOpponents(opponentIds, opponentNames, userName: _userName);
     }
 
     _subscription = _client.streamGameEvents(roomId, _userId).listen(
@@ -75,12 +76,21 @@ class GameNotifier extends StateNotifier<GameState?> {
 
   void _onRoundResult(GameEventData event) {
     _countdownTimer?.cancel();
-    // Mark the correct answer
-    if (state?.selectedAnswerIndex != null && event.correctIndex != null) {
-      state = state?.copyWith(
-        answerCorrect: state?.selectedAnswerIndex == event.correctIndex,
-      );
-    }
+    if (event.correctIndex == null) return;
+
+    final correct = state?.selectedAnswerIndex != null
+        ? state?.selectedAnswerIndex == event.correctIndex
+        : false; // no answer = wrong
+
+    // Record this round's result
+    final updatedResults = Map<int, bool>.from(state?.roundResults ?? {});
+    updatedResults[state?.currentRound ?? 0] = correct;
+
+    state = state?.copyWith(
+      answerCorrect: state?.selectedAnswerIndex != null ? correct : null,
+      correctAnswerIndex: event.correctIndex,
+      roundResults: updatedResults,
+    );
   }
 
   void _onLeaderboardUpdate(GameEventData event) {
@@ -117,7 +127,16 @@ class GameNotifier extends StateNotifier<GameState?> {
 
   void selectAnswer(int index) {
     if (state?.selectedAnswerIndex != null) return; // Already answered
-    state = state?.copyWith(selectedAnswerIndex: index);
+
+    // Get correct answer immediately for instant feedback
+    final correctIdx = _client.getCorrectIndex(state!.currentRound);
+    final isCorrect = correctIdx != null && index == correctIdx;
+
+    state = state?.copyWith(
+      selectedAnswerIndex: index,
+      answerCorrect: isCorrect,
+      correctAnswerIndex: correctIdx,
+    );
 
     // Submit to server
     if (state?.currentQuestion != null) {

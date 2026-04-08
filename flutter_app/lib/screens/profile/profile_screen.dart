@@ -36,28 +36,16 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   // Top bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => context.go('/matchmaking'),
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.white),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Profile',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Profile',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
 
